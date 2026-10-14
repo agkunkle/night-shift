@@ -1,0 +1,4 @@
+# Runtime state: roster, ledger, reports, archive
+state/
+__pycache__/
+.pytest_cache/
