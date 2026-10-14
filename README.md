@@ -59,6 +59,10 @@ Back early? Tell the manager "I'm back". It runs `/night-shift-end`.
   transcripts. Idle gaps of up to 20 minutes are acceptable.
 - **No Stop hook.** Daytime sessions behave normally.
 - **The manager is read-only in worker projects.** This avoids collisions with the worker.
+- **Usage limits.** All sessions share one quota, so all of them stop together. The manager's
+  cron cycle recovers on its own when the window resets; workers do not. The manager detects
+  the limit in each worker's transcript and sends a resume message. If the scheduled end fails
+  during an outage, the next cycle notices and writes the report.
 - **Evidence over self-report.** `peek.py` checks commits, repeated errors, and diff patterns
   such as skipped tests and `|| true`, not only what the worker says.
 
@@ -68,6 +72,9 @@ Back early? Tell the manager "I'm back". It runs `/night-shift-end`.
 - How well does `peek.py` find the right transcript when two sessions share one project
   directory? (Enrollment records the transcript path to avoid this.)
 - Does the manager stay coherent through many compactions on a weekend shift?
+- Usage limits: does `peek.py` detect a real limit event? (The detection is a guess; no real
+  event has been captured yet.) Do cron prompts that fire during an outage fail cleanly, and
+  does the next one run after the window resets?
 
 ## License
 

@@ -42,6 +42,9 @@ Otherwise do steps 3-4 below for the last 24 hours only, and write
    - QA: <tamper flags and how they were resolved, or "clean">
    - Manager interventions: <count>; which helped
 
+   ## Outages
+   <usage-limit gaps from the ledger: from–to, which workers were resumed; or "none">
+
    ## Manager notes
    <what worked and what did not, for tuning the night shift>
    ```

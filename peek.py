@@ -25,6 +25,9 @@ ADDED_TAMPER_PATTERNS = [
   (r"\b(HACK|SHIM|WORKAROUND)\b", "hack/shim marker"),
 ]
 
+# Wording of a turn that ended on the account's usage window, not on the task.
+LIMIT_PATTERN = r"\b(usage|rate|session|weekly)[ -]limit\b|\blimit (reached|exceeded)\b"
+
 # Removed lines that may mean a test or assertion was deleted.
 REMOVED_TAMPER_PATTERNS = [
   (r"^\s*def test_\w+|^\s*TEST(_F|_P)?\(|^\s*(it|test)\(", "test removed"),
@@ -79,6 +82,7 @@ def block_text(content):
 def summarize_transcript(lines, since=None, turns=5):
   """Summarize transcript JSONL lines. Only events at or after `since` count."""
   last_activity = None
+  last_assistant = None
   texts = []
   errors = []
   for raw in lines:
@@ -92,6 +96,8 @@ def summarize_transcript(lines, since=None, turns=5):
     if since and ts < since:
       continue
     last_activity = ts
+    if event["type"] == "assistant":
+      last_assistant = event
     content = event.get("message", {}).get("content")
     if not isinstance(content, list):
       continue
@@ -106,7 +112,23 @@ def summarize_transcript(lines, since=None, turns=5):
     "last_texts": texts[-turns:],
     "error_count": len(errors),
     "repeated_errors": [(k, n) for k, n in counts.most_common() if n >= 2],
+    "limit_hit": detect_limit(last_assistant),
   }
+
+
+def detect_limit(event):
+  """Return the text of a final assistant event that looks like a usage/rate limit, else None.
+
+  Unverified heuristic: no real limit event has been captured yet. Claude Code marks synthetic
+  API-error turns with `isApiErrorMessage`; the wording check is a fallback.
+  """
+  if not event:
+    return None
+  content = event.get("message", {}).get("content")
+  text = block_text(content).strip()
+  if event.get("isApiErrorMessage") or re.search(LIMIT_PATTERN, text, re.IGNORECASE):
+    return text[:300] or "(API error, no text)"
+  return None
 
 
 def git(cwd, *args):
@@ -140,6 +162,8 @@ def render(cwd, since, gs, ts):
   out += [""]
 
   out += ["## transcript"]
+  if ts["limit_hit"]:
+    out += [f"USAGE LIMIT: last turn ended on a usage/API limit: `{ts['limit_hit']}`"]
   if ts["last_activity"]:
     idle_min = int((now - ts["last_activity"]).total_seconds() // 60)
     out += [f"last activity: {ts['last_activity'].astimezone():%H:%M} ({idle_min} min ago)"]

@@ -89,3 +89,24 @@ def test_git_summary_on_real_repo(tmp_path):
   assert "test_a.py" in gs["status"]
   kinds = [k for k, _ in peek.scan_diff(gs["diff"])]
   assert "skip/xfail marker" in kinds and "assertion removed" in kinds
+
+
+def test_detect_limit_on_final_turn_only():
+  limited = event("assistant", "2026-10-14T03:00:00Z", [
+    {"type": "text", "text": "Claude usage limit reached. Your limit will reset at 4am."}])
+  later_ok = event("assistant", "2026-10-14T04:10:00Z", [{"type": "text", "text": "Resumed."}])
+  assert "usage limit" in peek.summarize_transcript([limited])["limit_hit"]
+  assert peek.summarize_transcript([limited, later_ok])["limit_hit"] is None
+
+
+def test_detect_limit_api_error_flag():
+  line = json.dumps({
+    "type": "assistant", "timestamp": "2026-10-14T03:00:00Z", "isApiErrorMessage": True,
+    "message": {"content": [{"type": "text", "text": "API Error: 429"}]}})
+  assert peek.summarize_transcript([line])["limit_hit"] == "API Error: 429"
+
+
+def test_detect_limit_ignores_normal_text():
+  line = event("assistant", "2026-10-14T03:00:00Z", [
+    {"type": "text", "text": "Raised the recursion limit; the counter resets at zero."}])
+  assert peek.summarize_transcript([line])["limit_hit"] is None

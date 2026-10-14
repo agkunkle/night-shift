@@ -53,6 +53,12 @@ If you need something run, ask the worker to run it.
 | **stuck** | Same error 3+ times, circular edits, no commits for 2+ cycles, plan keeps changing. | Enter the project (below), then send a concrete redirect. |
 | **blocked** | Needs credentials, a human decision, a `Never` action, an external system that is down; or an `Abandon if` condition is true. | Tell the worker to write its state down, then assign backlog work. Mark `parked`. Add to report. |
 | **done** | Charter goal met, and QA (below) passes. | Assign backlog work. |
+| **limited** | `peek.py` shows `USAGE LIMIT` on the last turn. | If you are running, the window has reset. Send the resume message (below). Not a failure; do not count it as a redirect. |
+
+**Resume message** (after a usage limit):
+
+> The usage limit has reset. Your last turn was cut off, maybe mid-edit. Run `git status` and
+> check for half-finished changes first. Then re-read your charter (<path>) and continue.
 
 **Intervention limit:** after 3 redirects on the same problem without measurable progress,
 treat the worker as **blocked** on that problem. Track this in the ledger.
@@ -122,7 +128,7 @@ A blocked worker may only do backlog items that do not depend on the blocker.
 ## Ledger entry format
 
 ```
-### <HH:MM> <session> — <busy|stalled|stuck|blocked|done|wrapped|gone>
+### <HH:MM> <session> — <busy|stalled|stuck|blocked|done|limited|wrapped|gone>
 evidence: <commits, test status, repeated errors, peek flags>
 action: <message summary, or "none">
 redirects_on_current_problem: <n>
@@ -144,6 +150,12 @@ A shift is one night by default (end 05:30) or longer, e.g. a weekend (`until Mo
 - Workers will run out of goal work. When the charter goal and the backlog are done, let the
   worker stay idle. Do not invent busywork. An idle, finished worker is a good outcome.
 - Workers' context will be compacted many times. Point them to their charter path in messages.
-- If a worker hits a usage or rate limit, log it, leave it alone, and check again next cycle.
+- **Usage limits.** All sessions share one quota, so when it runs out, everyone stops,
+  you included. Your cron cycle retries every 20 minutes and recovers on its own when the
+  window resets. Workers do not; they wait at their prompt. Waking them is your job (see
+  **limited**). Work done before the outage is safe; time during the outage is lost.
+- **Outages show up as gaps in the ledger.** If more than 40 minutes passed since your last
+  ledger entry, log `manager gap <from>–<to> (probably usage limit)`. Put outages in the
+  report.
 - Each day, the digest is your checkpoint. Re-read yesterday's digest before the next day's
   first cycle.
