@@ -26,8 +26,9 @@ Template: `<repo>/charter_template.md`
    - `Goal tonight`: checkable outcomes, not "make progress".
    - `Context`: what failed today and what was tried. The manager has none of your context.
    - `Finished shape`: what the finished project looks like.
-   - `Never`: always include push to main, force-push, deleting files or data, CI/CD changes,
-     plus anything the user said today not to do.
+   - `Never`: always include push to main, force-push, deleting data, assets, or untracked
+     files (removing dead source code in a commit is fine), CI/CD changes, plus anything the
+     user said today not to do.
    - `kind`: `research` for breakthrough / proof-of-concept work, `maintenance` for an
      established project.
 3. **Show the draft to the user and wait.** Ask them to approve it or edit it. Do not write the

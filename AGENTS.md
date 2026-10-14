@@ -105,18 +105,51 @@ with notes. Record it in the ledger. It always goes in the report.
 A worker that is done, or blocked on its main goal, takes the next item from this list. Use the
 charter's `Backlog` first, then these defaults. Do not repeat an item that the ledger shows done.
 
-1. **Independent review.** "Launch an independent code-review subagent on tonight's changes. Ask
+1. **Sweep and prune.** A simpler baseline is worth a whole night. Send the protocol below.
+2. **Independent review.** "Launch an independent code-review subagent on tonight's changes. Ask
    it to find refactors and simplifications, and places where a comment would explain *why*.
    Comments only where needed, not on every line. Apply the changes that are clearly better.
    Keep tests passing."
-2. **Unit tests.** "Write unit tests for code paths changed tonight that have no tests. Test
+3. **Unit tests.** "Write unit tests for code paths changed tonight that have no tests. Test
    behavior, not implementation."
-3. **Compatibility.** "Have you tested on all compatible devices / platforms / configurations
+4. **Compatibility.** "Have you tested on all compatible devices / platforms / configurations
    for this project? List them, test the ones you can, and record the ones you cannot."
-4. **Triage.** "Re-run the full test suite. Triage any failure: repro, root cause, fix or park."
-5. **Docs.** "Update the README / AGENTS.md for anything that changed tonight."
+5. **Triage.** "Re-run the full test suite. Triage any failure: repro, root cause, fix or park."
+6. **Docs.** "Update the README / AGENTS.md for anything that changed tonight."
 
 A blocked worker may only do backlog items that do not depend on the blocker.
+
+### Sweep-and-prune protocol
+
+Scope: the whole codebase, not only tonight's changes. Goal: less code, same behavior.
+
+1. **Baseline.** Run the full test suite (and build, lint, type-check if the project has them).
+   Save the list of passing and failing tests. This is the regression reference.
+2. **Safety net.** If an area you will touch has weak tests, write characterization tests for
+   its current behavior first. Commit them separately.
+3. **Find dead code.** Unused functions, classes, imports, files, config flags, and feature
+   switches; commented-out code; abandoned experiments; duplicate helpers. Use tools where they
+   exist (e.g. `vulture` for Python, `-Wunused` / `cppcheck --enable=unusedFunction` for C/C++,
+   `knip` / `ts-prune` for JS/TS, a coverage report for never-run code). Verify each candidate
+   with a search. Check for dynamic use: entry points, CLI commands, plugins, reflection,
+   string-based lookups, build scripts, docs.
+4. **Prune and simplify in small steps.** One theme per commit (e.g. "remove unused parser
+   flags"). Merge duplicates, flatten needless layers, delete dead branches. Do not change
+   public interfaces or behavior.
+5. **Test after every step.** Compare with the baseline: no test that passed may fail. If a
+   step regresses, revert that step. Do not "fix" the test.
+6. **Unsure? Leave it.** If you cannot prove code is dead, keep it and list it in your
+   end-of-turn status as a candidate for the user.
+7. **Report.** Lines removed, what was removed and why, baseline vs. final test results, and
+   the list of candidates you left.
+
+Rules: tests are never dead code. A test may only go in the same commit that removes the code
+it tests. Deleting tracked source code in a commit on the working branch is allowed (git keeps
+it). Deleting data, assets, or untracked files is not. If the charter's `Never` forbids deleting
+files in general, prune only inside files, and list whole dead files as candidates for the user.
+
+QA for a sweep: check the baseline and final test lists yourself, check that each commit has one
+theme, and check that no test was removed without its code.
 
 ## Messages
 
