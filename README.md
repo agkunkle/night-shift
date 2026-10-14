@@ -68,3 +68,7 @@ Back early? Tell the manager "I'm back". It runs `/night-shift-end`.
 - How well does `peek.py` find the right transcript when two sessions share one project
   directory? (Enrollment records the transcript path to avoid this.)
 - Does the manager stay coherent through many compactions on a weekend shift?
+
+## License
+
+MIT. See `LICENSE`.
